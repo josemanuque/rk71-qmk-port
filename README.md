@@ -15,7 +15,8 @@ Royal Kludge RK71 RGB: PCB `603-836/RGB-BT-HFD REV:01`, MCU SONiX SN32F248BF. Th
 | `v0.2b` | F-row lock: Fn+Ctrl turns 1…= into F1…F12 (remembered, Fn key glows orange); with the lock on, Fn+F-keys = media |
 | `v0.3b` | Solid white lighting by default |
 | `v0.4b` | Bluetooth: Fn+Q/W/E/R/T device 1–5 (hold 3 s to pair), Fn+P wired/BT (hold 3 s to pair), Fn+Bksp hold to forget all |
-| `main` | Latest (= v0.4b) |
+| `v0.4.1b` | Fix: keys skipped when typing fast on Bluetooth (reports are now queued, not dropped) |
+| `main` | Latest (= v0.4.1b) |
 
 Each version branch has its ready-to-flash image in `releases/`.
 

@@ -15,7 +15,8 @@
 #include "timer.h"
 #include "config.h"
 
-#define SEND_TIMEOUT_MS 20
+#define STUCK_TIMEOUT_MS 200 /* as the stock firmware (200-tick countdown @0x5816) */
+#define GAP_MS 1
 
 /* SPI0 register bits (SN32F240B datasheet, section 10.7). */
 #define CTRL0_SPIEN (1u << 0)
@@ -80,32 +81,28 @@ OSAL_IRQ_HANDLER(SN32_SPI0_HANDLER) {
     OSAL_IRQ_EPILOGUE();
 }
 
-bool rk71_bt_send(const uint8_t *data, uint8_t len) {
-    if (len == 0 || len > sizeof(tx_buf)) return false;
+/* ---- outgoing queue -------------------------------------------------------------------------
+ * Reports are queued and handed to the module one at a time from the main loop, as the stock
+ * firmware does. The module takes packets in its own radio rhythm, so a packet can wait several
+ * milliseconds; nothing is dropped unless the module stops responding for STUCK_TIMEOUT_MS. */
 
-    /* Wait for the previous packet, and never start while the module is talking. */
-    uint32_t wait_start = timer_read32();
-    while (tx_busy || gpio_read_pin(RK71_BT_DIR_PIN)) {
-        if (tx_busy && TIMER_DIFF_32(timer_read32(), tx_started) > SEND_TIMEOUT_MS) {
-            /* Module not clocking (switched off or stuck): drop the old packet and reset. */
-            chSysLock();
-            tx_busy = false;
-            gpio_write_pin_low(RK71_BT_REQ_PIN);
-            fifo_reset();
-            chSysUnlock();
-            return false;
-        }
-        if (!tx_busy && timer_elapsed32(wait_start) > SEND_TIMEOUT_MS) return false;
-    }
+#define QUEUE_LEN 16
+#define PACKET_MAX 10
 
-    uint32_t t = timer_read32();
-    while (SN_SPI0->STAT & STAT_BUSY) {
-        if (timer_elapsed32(t) > SEND_TIMEOUT_MS) return false;
-    }
+typedef struct {
+    uint8_t len;
+    uint8_t data[PACKET_MAX];
+} packet_t;
 
+static packet_t queue[QUEUE_LEN];
+static uint8_t  q_head, q_tail; /* head = next to send, tail = next free */
+static bool     was_busy;
+static uint32_t last_done;
+
+static void start_packet(const packet_t *p) {
     chSysLock();
-    memcpy(tx_buf, data, len);
-    tx_len  = len;
+    memcpy(tx_buf, p->data, p->len);
+    tx_len  = p->len;
     tx_idx  = 1;
     tx_busy = true;
     fifo_reset();
@@ -113,10 +110,51 @@ bool rk71_bt_send(const uint8_t *data, uint8_t len) {
     gpio_write_pin_high(RK71_BT_REQ_PIN); /* "packet ready": the module starts clocking */
     chSysUnlock();
     tx_started = timer_read32();
+}
+
+static void pump(void) {
+    uint32_t now = timer_read32();
+
+    if (tx_busy) {
+        if (TIMER_DIFF_32(now, tx_started) <= STUCK_TIMEOUT_MS) return;
+        /* Module not clocking (switched off or stuck): reset and drop what is queued, it is stale. */
+        chSysLock();
+        tx_busy = false;
+        gpio_write_pin_low(RK71_BT_REQ_PIN);
+        fifo_reset();
+        chSysUnlock();
+        q_head = q_tail;
+        was_busy = false;
+        return;
+    }
+    if (was_busy) { /* previous packet just finished */
+        was_busy  = false;
+        last_done = now;
+    }
+    if (q_head == q_tail) return;
+    if (gpio_read_pin(RK71_BT_DIR_PIN)) return;         /* module is talking: wait */
+    if (TIMER_DIFF_32(now, last_done) < GAP_MS) return; /* short gap between packets */
+    if (SN_SPI0->STAT & STAT_BUSY) return;
+
+    start_packet(&queue[q_head]);
+    q_head   = (q_head + 1) % QUEUE_LEN;
+    was_busy = true;
+}
+
+bool rk71_bt_send(const uint8_t *data, uint8_t len) {
+    if (len == 0 || len > PACKET_MAX) return false;
+    uint8_t next = (q_tail + 1) % QUEUE_LEN;
+    if (next == q_head) return false; /* full: module gone for a while */
+    queue[q_tail].len = len;
+    memcpy(queue[q_tail].data, data, len);
+    q_tail = next;
+    pump();
     return true;
 }
 
 void rk71_bt_task(void) {
+    pump();
+
     uint8_t packet[sizeof(rx_buf)];
     uint8_t n = 0;
 
