@@ -4,3 +4,6 @@
 BLUETOOTH_ENABLE = yes
 BLUETOOTH_DRIVER = custom
 SRC += rk71_bt.c
+
+# Per-key debounce: a bouncy switch (seen as double letters) is filtered without slowing other keys.
+DEBOUNCE_TYPE = sym_defer_pk

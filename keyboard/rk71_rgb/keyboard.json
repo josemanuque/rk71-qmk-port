@@ -10,7 +10,7 @@
     },
     "development_board": "sn32f240b_shared_matrix",
     "diode_direction": "COL2ROW",
-    "debounce": 5,
+    "debounce": 10,
     "matrix_pins": {
         "cols": [
             "A8",

@@ -49,7 +49,7 @@ kb = {
     "usb": {"vid": "0x0C45", "pid": "0x8071", "device_version": "1.0.0"},
     "development_board": "sn32f240b_shared_matrix",
     "diode_direction": "COL2ROW",
-    "debounce": 5,
+    "debounce": 10,
     "matrix_pins": {
         "cols": ["A8","A9","A10","A11","A12","A13","A14","A15","B0","B1","B2","B3","B4","B5","B6","B7"],
         "rows": ["D11","D10","D9","D8","D7"],
