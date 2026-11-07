@@ -14,3 +14,9 @@
 #define SN32F2XX_RGB_MATRIX_ROW_PINS { C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, C14, B13, D3, B15, B14 }
 
 #define RGB_MATRIX_TYPING_HEATMAP_DECREASE_DELAY_MS 50
+
+/* Out-of-the-box lighting: solid white. Only used when the settings storage is reset
+ * (first boot or an EEPROM clear); saved settings take priority. */
+#define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_SOLID_COLOR
+#define RGB_MATRIX_DEFAULT_HUE 0
+#define RGB_MATRIX_DEFAULT_SAT 0
