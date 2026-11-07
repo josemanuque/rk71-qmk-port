@@ -14,6 +14,7 @@ Royal Kludge RK71 RGB: PCB `603-836/RGB-BT-HFD REV:01`, MCU SONiX SN32F248BF. Th
 | `v0.1b` | First working QMK: all 71 keys, RGB matrix, VIA, Win/Mac modes, Fn layer |
 | `v0.2b` | F-row lock: Fn+Ctrl turns 1…= into F1…F12 (remembered, Fn key glows orange); with the lock on, Fn+F-keys = media |
 | `v0.3b` | Solid white lighting by default (not yet tested on the keyboard) |
+| `v0.4b` | Bluetooth: Fn+Q/W/E/R/T device 1–5 (hold 3 s to pair), Fn+P wired/BT (hold 3 s to pair), Fn+Bksp hold to forget all (not yet tested on the keyboard) |
 | `main` | Latest (= v0.3b) |
 
 Each version branch has its ready-to-flash image in `releases/`.
@@ -55,5 +56,6 @@ Required tools (Windows): Arm GNU Toolchain 12.2 (`winget install Arm.ArmGnuTool
 
 ## Known limitations
 
-* QMK runs over USB only. The Bluetooth module is not driven yet (the protocol is decoded in `docs/BLUETOOTH.md`).
+* Bluetooth (v0.4b+): no deep sleep yet. Lighting turns off after 5 minutes idle, but the chip stays awake, so turn the
+  slide switch off when you are not using the keyboard on battery.
 * VIA settings, keymaps and lighting are stored in flash. A new build can reset the keymap to its defaults.

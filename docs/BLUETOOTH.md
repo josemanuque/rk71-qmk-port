@@ -58,6 +58,35 @@ GPIO register offsets (datasheet): DATA 0x00, MODE 0x04, BSET **0x24**, BCLR **0
 | `B6 5A 0A` | Clears `0x200001DC`, `0x200001E4`, `0x20000240` | Status event, e.g. connected |
 | `B6 51 76` / `77` / `78` | Clear pending-command flags | Acknowledgements of `A6 51 xx` commands |
 
+## Update: it is an ITON module, and how the stock keys drive it
+
+Further decoding (2026-11-06) showed the module speaks the same protocol as QMK's `iton_bt` driver
+(`drivers/bluetooth/iton_bt.h`), which independently confirms the table above:
+
+| Bytes | Meaning | Stock trigger |
+|---|---|---|
+| `A6 51 81`…`85` | Select device slot 1–5 and connect | Fn+Q/W/E/R/T (Fn table @0x7942: Q→F3, W→F4, E→F5, R→AD, T→F6) |
+| `A6 51 89` | Enter pairing on the current slot | Fn+P held ~3 s (code F1; up to 3 retries) |
+| `A6 51 70` | Forget all pairings | Factory-reset routine @0xAE8C |
+| `A6 58 01` | Wired (USB) mode, module idle | Fn+P tap while in Bluetooth mode |
+| `B6 51 76/77/78/79` | Connected / pairing / disconnected / connecting | |
+| `B6 5A 06/07/0A` | Battery low / low-power shutdown / battery OK | |
+
+- The slide switch is not read by the firmware. It only connects the battery. Wired vs Bluetooth is a
+  firmware mode (RAM `0x200001E0`, saved at flash `0x8009`), toggled with Fn+P. Entering Bluetooth also
+  disables the USB pull-up (@0x0A94).
+- Pin setup (@0x653C): A6 and A7 are outputs held low (assumed to be module control lines). Other
+  unexplained pins: C0/C1/C3 outputs low; C15, D0–D2, D12–D15 inputs.
+- The stock firmware uses no pin interrupt for the link. The SPI0 interrupt checks A1 to tell receive from
+  send, and the main loop parses complete packets by length.
+
+## QMK implementation
+
+`keyboard/rk71_rgb/rk71_bt.c` is a register-level port of that stock logic (SPI0 slave, A0/A1
+handshake, 20 ms send timeout). It does not use QMK's `iton_bt.c`, which needs pin-change callbacks
+(512 bytes of RAM that this 8 KB chip does not have) and blocks forever if the module is unpowered.
+`rk71_rgb.c` provides the modes, the Fn keys and the status lights.
+
 ## What this means for QMK
 
 The protocol is small, which makes a QMK Bluetooth driver realistic:

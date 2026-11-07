@@ -20,3 +20,10 @@
 #define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_SOLID_COLOR
 #define RGB_MATRIX_DEFAULT_HUE 0
 #define RGB_MATRIX_DEFAULT_SAT 0
+
+/*
+ * Bluetooth module link (decoded from stock firmware V1.12): SPI0 slave on A2-A5, plus
+ * A0 = keyboard -> module "packet ready" and A1 = module -> keyboard "module is sending".
+ */
+#define RK71_BT_REQ_PIN A0
+#define RK71_BT_DIR_PIN A1

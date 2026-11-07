@@ -62,11 +62,15 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      * Fn + ← / →        → RGB effect slower / faster
      * Fn + Win          → Mac mode      Fn + Alt → Windows mode    (remembered)
      * Fn + Pause        → bootloader (for reflashing)
+ * Bluetooth (same keys as the stock firmware):
+ * Fn + Q/W/E/R/T    → Bluetooth device 1–5;  hold 3 s → pair a new device in that slot
+ * Fn + P            → switch wired / Bluetooth;  hold 3 s → pair the current slot
+ * Fn + Backspace    → hold 3 s → forget all paired devices
      * (Win/Alt here are the physical keys, so these combos work the same in both modes.)
      */
     [FN] = LAYOUT(
-        KC_GRV,  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  _______,          KC_PSCR, KC_MPRV,
-        _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, RM_NEXT,          KC_MPLY, KC_MNXT,
+        KC_GRV,  KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  BT_CLR,           KC_PSCR, KC_MPRV,
+        _______, BT_HST1, BT_HST2, BT_HST3, BT_HST4, BT_HST5, _______, _______, _______, _______, BT_MODE, _______, _______, RM_NEXT,          KC_MPLY, KC_MNXT,
         _______, _______, _______, _______, _______, _______, RM_HUEU, _______, _______, _______, _______, _______,          RM_TOGG,          QK_BOOT, KC_VOLU,
         _______,          _______, _______, _______, _______, _______, _______, KC_MUTE, _______, _______, _______,          _______,          RM_VALU, KC_VOLD,
         TG(FROW), PDF(MAC_BASE), PDF(WIN_BASE),               _______,                   _______, _______, TG(FROW),         RM_SPDD,          RM_VALD, RM_SPDU
@@ -131,5 +135,5 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     if (layer_state_is(FROW)) {
         light_key(4, 11, RGB_ORANGE, led_min, led_max); /* Fn key */
     }
-    return false;
+    return true; /* let the keyboard draw the Bluetooth status on top */
 }

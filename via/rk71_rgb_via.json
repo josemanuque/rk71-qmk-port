@@ -12,6 +12,43 @@
   "menus": [
     "qmk_rgb_matrix"
   ],
+  "customKeycodes": [
+    {
+      "name": "BT 1",
+      "title": "Bluetooth device 1 (hold 3 s: pair)",
+      "shortName": "BT1"
+    },
+    {
+      "name": "BT 2",
+      "title": "Bluetooth device 2 (hold 3 s: pair)",
+      "shortName": "BT2"
+    },
+    {
+      "name": "BT 3",
+      "title": "Bluetooth device 3 (hold 3 s: pair)",
+      "shortName": "BT3"
+    },
+    {
+      "name": "BT 4",
+      "title": "Bluetooth device 4 (hold 3 s: pair)",
+      "shortName": "BT4"
+    },
+    {
+      "name": "BT 5",
+      "title": "Bluetooth device 5 (hold 3 s: pair)",
+      "shortName": "BT5"
+    },
+    {
+      "name": "BT/USB",
+      "title": "Switch wired / Bluetooth (hold 3 s: pair current slot)",
+      "shortName": "BT/USB"
+    },
+    {
+      "name": "BT Clear",
+      "title": "Hold 3 s: forget all Bluetooth devices",
+      "shortName": "BTclr"
+    }
+  ],
   "layouts": {
     "keymap": [
       [

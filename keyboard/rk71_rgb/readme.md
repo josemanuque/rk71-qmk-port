@@ -1,6 +1,6 @@
 # Royal Kludge RK71 RGB (HFD PCB 603-836/RGB-BT-HFD, SN32F248BF)
 
-A 71-key 70% board. This port is wired (USB) only for now; the Bluetooth module is not driven.
+A 71-key 70% board. USB and Bluetooth (on-board ITON module, see docs/BLUETOOTH.md in the rk71_mod repo).
 
 * Keyboard maintainer: josemanuque
 * Hardware supported: RK71 RGB, PCB `603-836/RGB-BT-HFD REV:01`, MCU SN32F248BF (LQFP64)

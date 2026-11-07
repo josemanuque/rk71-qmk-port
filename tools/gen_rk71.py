@@ -88,6 +88,12 @@ if len(sys.argv) > 2:
         rows.append(row)
     via = {"name": "RK71 RGB (QMK)", "vendorId": "0x0C45", "productId": "0x8071",
            "matrix": {"rows": 5, "cols": 16}, "keycodes": ["qmk_lighting"],
-           "menus": ["qmk_rgb_matrix"], "layouts": {"keymap": rows}}
+           "menus": ["qmk_rgb_matrix"],
+           "customKeycodes": [  # QK_KB_0… in keyboard/rk71_rgb/rk71_rgb.h, same order
+               {"name": f"BT {n}", "title": f"Bluetooth device {n} (hold 3 s: pair)", "shortName": f"BT{n}"}
+               for n in range(1, 6)] + [
+               {"name": "BT/USB", "title": "Switch wired / Bluetooth (hold 3 s: pair current slot)", "shortName": "BT/USB"},
+               {"name": "BT Clear", "title": "Hold 3 s: forget all Bluetooth devices", "shortName": "BTclr"}],
+           "layouts": {"keymap": rows}}
     json.dump(via, open(sys.argv[2], "w"), indent=2)
     print("wrote", sys.argv[2])
