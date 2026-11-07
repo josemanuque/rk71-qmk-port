@@ -1,0 +1,14 @@
+# Upstream SonixQMK checkout (separate git repo; see README for the pinned commit)
+qmk_firmware/
+
+# Third-party tools (download them; see README)
+sonixflasher/
+sonixflasher.zip
+tools/make.exe
+
+# Local build output (released binaries go in releases/)
+build/
+*.elf
+*.map
+
+__pycache__/
