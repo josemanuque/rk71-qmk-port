@@ -12,6 +12,7 @@ Royal Kludge RK71 RGB: PCB `603-836/RGB-BT-HFD REV:01`, MCU SONiX SN32F248BF. Th
 |---|---|
 | `stock` | Original Royal Kludge firmware V1.12, unmodified, plus research notes |
 | `v0.1b` | First working QMK: all 71 keys, RGB matrix, VIA, Win/Mac modes, Fn layer |
+| `v0.2b` | F-row lock: Fn+Ctrl turns 1…= into F1…F12 (remembered, Fn key glows orange); with the lock on, Fn+F-keys = media |
 | `main` | Latest |
 
 Each version branch has its ready-to-flash image in `releases/`.

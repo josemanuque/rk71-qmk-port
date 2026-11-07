@@ -57,7 +57,7 @@ kb = {
     "features": {"bootmagic": True, "extrakey": True, "nkro": True, "rgb_matrix": True,
                  "mousekey": False, "console": False, "command": False, "audio": False, "backlight": False},
     "bootmagic": {"matrix": [0, 0]},
-    "dynamic_keymap": {"layer_count": 4},
+    "dynamic_keymap": {"layer_count": 5},
     "rgb_matrix": {
         "driver": "sn32f2xx",
         "max_brightness": 200,
