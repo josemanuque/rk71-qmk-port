@@ -16,20 +16,21 @@
 #include "config.h"
 
 #define STUCK_TIMEOUT_MS 200 /* as the stock firmware (200-tick countdown @0x5816) */
-#define GAP_MS 1
+#define GAP_MS 2
 
 /* SPI0 register bits (SN32F240B datasheet, section 10.7). */
 #define CTRL0_SPIEN (1u << 0)
 #define CTRL0_SLAVE (1u << 3)
 #define CTRL0_FRESET (3u << 6)
 #define CTRL0_8BIT (7u << 8)
+#define STAT_TX_FULL (1u << 1)
 #define STAT_RX_EMPTY (1u << 2)
 #define STAT_BUSY (1u << 4)
 #define RXFIFOTH_FLAG (1u << 2) /* same bit in IE, RIS and IC */
 #define AHBCLKEN_SPI0 (1u << 12)
 
 static uint8_t           tx_buf[16];
-static volatile uint8_t  tx_len, tx_idx;
+static volatile uint8_t  tx_len, tx_idx, tx_clocked; /* idx = bytes loaded, clocked = bytes the module took */
 static volatile bool     tx_busy;
 static uint32_t          tx_started;
 static volatile uint8_t  rx_buf[8];
@@ -56,7 +57,7 @@ void rk71_bt_init(void) {
     SN_SPI0->IC = 0xF;
     SN_SPI0->IE = RXFIFOTH_FLAG;
     nvicClearPending(SN32_SPI0_NUMBER);
-    nvicEnableVector(SN32_SPI0_NUMBER, 3);
+    nvicEnableVector(SN32_SPI0_NUMBER, 0); /* highest: the TX FIFO must be refilled in time */
     SN_SPI0->CTRL0 |= CTRL0_SPIEN;
 }
 
@@ -68,10 +69,9 @@ OSAL_IRQ_HANDLER(SN32_SPI0_HANDLER) {
             /* module -> keyboard */
             if (rx_len < sizeof(rx_buf)) rx_buf[rx_len++] = byte;
         } else if (tx_busy) {
-            /* keyboard -> module: one byte went out, load the next or finish */
-            if (tx_idx < tx_len) {
-                SN_SPI0->DATA = tx_buf[tx_idx++];
-            } else {
+            /* keyboard -> module: one byte went out. Top the FIFO up; finish after the last byte. */
+            while (tx_idx < tx_len && !(SN_SPI0->STAT & STAT_TX_FULL)) SN_SPI0->DATA = tx_buf[tx_idx++];
+            if (++tx_clocked >= tx_len) {
                 gpio_write_pin_low(RK71_BT_REQ_PIN);
                 tx_busy = false;
             }
@@ -102,11 +102,15 @@ static uint32_t last_done;
 static void start_packet(const packet_t *p) {
     chSysLock();
     memcpy(tx_buf, p->data, p->len);
-    tx_len  = p->len;
-    tx_idx  = 1;
-    tx_busy = true;
+    tx_len     = p->len;
+    tx_idx     = 0;
+    tx_clocked = 0;
+    tx_busy    = true;
     fifo_reset();
-    SN_SPI0->DATA = tx_buf[0];
+    /* Preload as much as the 8-frame TX FIFO holds, so a late interrupt cannot starve the
+     * module mid-packet (the stock firmware fed one byte per interrupt, but it had no RTOS
+     * or RGB timer interrupt delaying it). */
+    while (tx_idx < tx_len && !(SN_SPI0->STAT & STAT_TX_FULL)) SN_SPI0->DATA = tx_buf[tx_idx++];
     gpio_write_pin_high(RK71_BT_REQ_PIN); /* "packet ready": the module starts clocking */
     chSysUnlock();
     tx_started = timer_read32();
