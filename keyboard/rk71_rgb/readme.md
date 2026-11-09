@@ -31,4 +31,4 @@ Flash with SonixFlasherC at offset 0:
 
     sonixflasher -v 0c45/7040 -f royal_kludge_rk71_rgb_via.bin
 
-To go back to stock, flash the stock `rk71_fw.bin` the same way.
+To go back to stock, flash `stock/rk71_fw_v1.12.bin` from the rk71_mod repo the same way.

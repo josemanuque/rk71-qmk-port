@@ -34,12 +34,12 @@ Each version branch has its ready-to-flash image in `releases/`.
 ## Layout
 
 ```
-stock/         vendor firmware image + official updater / PC software (do not modify)
+stock/         vendor firmware image + official updater / PC software, recovery guide, stock internals
 keyboard/      QMK keyboard source: rk71_rgb (copied into qmk_firmware/ at build time)
 via/           VIA definition: load it in usevia.app > Settings > Design tab
 releases/      built firmware for each version
 docs/          reverse-engineering notes (Bluetooth protocol)
-tools/         build.sh, flash_rk71.sh, gen_rk71.py (generates keyboard.json + VIA json)
+tools/         build.sh, flash_rk71.sh, gen_rk71.py (keyboard.json + VIA json), stock_enter_isp.py
 archive/       an earlier failed attempt, kept for history only
 ```
 
@@ -47,9 +47,10 @@ archive/       an earlier failed attempt, kept for history only
 
 1. Put the keyboard in the SN32 ROM bootloader (USB `0C45:7040`). Use one of:
    * from QMK: **Fn + Pause**, or hold **Esc** while plugging in (with the BT switch off)
-   * from stock firmware: `sonixflasher -v 05ac/024f -r hfd -f <bin>` reboots the keyboard into the bootloader and flashes in one go
+   * from stock firmware: `python tools/stock_enter_isp.py` (what the vendor updater does), or
+     `sonixflasher -v 05ac/024f -r hfd -f <bin>`, which reboots into the bootloader and flashes in one go
    * last resort: short the left P1/P2 pad next to U4 (BOOT pin) to the USB shell while plugging in, and **keep it
-     shorted for the whole flash**
+     shorted for the whole flash**. Step by step: [stock/README.md](stock/README.md#if-it-is-bricked-no-keys-no-lights-fnpause-does-nothing)
 2. `bash tools/flash_rk71.sh releases/<file>.bin`. It waits for the bootloader, then flashes and checks the checksum.
 
 [SonixFlasher](https://github.com/SonixQMK/SonixFlasher/releases) is expected at `sonixflasher/sonixflasher.exe`.
