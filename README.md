@@ -25,7 +25,8 @@ Royal Kludge RK71 RGB: PCB `603-836/RGB-BT-HFD REV:01`, MCU SONiX SN32F248BF. Th
 | `v0.5.1b` | Side lights show mixed colours (white etc.) by cycling red/green/blue quickly |
 | `v0.5.2b` | Side lights: 3x faster colour cycling (less visible colour split), blue toned down for the bluish diffuser |
 | `v0.5.3b` | Side-light white balance in VIA (Neutral / Warm / Warmer / Warmest), default Warm |
-| `main` | Latest (= v0.5.3b) |
+| `v0.5.4b` | Side lights: Red/Green/Blue balance and Brightness sliders in VIA (0–31); follow keyboard brightness |
+| `main` | Latest (= v0.5.4b) |
 
 Each version branch has its ready-to-flash image in `releases/`.
 

@@ -9,53 +9,52 @@
 static const pin_t colour_pins[3]   = {D6, D4, D5};                /* red, green, blue */
 static const pin_t position_pins[6] = {B9, B10, B11, B12, C0, C1}; /* far … near */
 
-static uint8_t          shown_positions = 0xFF, shown_colour = 0xFF;
-static volatile uint8_t schedule[10]; /* colour index (0 R, 1 G, 2 B) per time slot */
-static volatile uint8_t schedule_len;
-static uint8_t          slot;
-static virtual_timer_t  slot_timer;
+static uint8_t shown_positions = 0xFF, shown_colour = 0xFF;
 
-/* Red, green and blue are shown one after another, never together: the LEDs share a supply per
- * position, and with red lit (lowest forward voltage) green and blue cannot light, so "white"
- * came out red. Short slots (200 us) keep each colour returning well over 1000 times a second.
- * Colour balance: the side LEDs sit behind a bluish diffuser, so red and green get more slots
- * than blue (set with side_set_balance(), from VIA "White balance"). */
-#define SLOT_US 200
-static const uint8_t balances[4][3] = {{3, 3, 2}, {4, 3, 1}, {5, 3, 1}, {5, 2, 1}};
-static uint8_t       weight[3]      = {4, 3, 1};
+/*
+ * Red, green and blue are lit one after another, never together: the LEDs share a supply per
+ * position, and with red lit (lowest forward voltage) green and blue cannot light ("white" came
+ * out red). Each 1.2 ms frame is: red on for t[0], green for t[1], blue for t[2], then off for
+ * the rest. The on-times set both the colour balance (the side LEDs sit behind a bluish diffuser)
+ * and the brightness. 1.2 ms frames = each colour repeats 833 times a second.
+ */
+#define FRAME_TICKS TIME_US2I(1200)
+#define MAX_TICKS (FRAME_TICKS / 3) /* one colour at full balance and brightness */
+#define MIN_TICKS 3                 /* shorter phases are skipped (timer overhead) */
 
-static void build_schedule(uint8_t colour) {
-    /* Interleave the wanted colours by weight: e.g. white = R G B R G R G B. */
-    uint8_t left[3], n = 0;
-    for (uint8_t c = 0; c < 3; c++) left[c] = ((colour >> c) & 1) ? weight[c] : 0;
-    uint8_t tmp[10];
-    while (n < 10) {
-        bool any = false;
-        for (uint8_t c = 0; c < 3 && n < 10; c++) {
-            if (left[c]) {
-                tmp[n++] = c;
-                left[c]--;
-                any = true;
-            }
-        }
-        if (!any) break;
-    }
-    chSysLock();
-    for (uint8_t i = 0; i < n; i++) schedule[i] = tmp[i];
-    schedule_len = n;
-    slot         = 0;
-    chSysUnlock();
-}
+static volatile uint16_t      on_ticks[4]; /* red, green, blue, off (ticks, < 65536) */
+static uint8_t                phase;
+static virtual_timer_t        frame_timer;
+static uint8_t                balance[3] = {31, 31, 31}; /* 0..31 per colour */
+static uint8_t                level      = 255;          /* brightness 0..255 */
 
-static void slot_tick(virtual_timer_t *vtp, void *p) {
-    (void)vtp;
+static void phase_tick(virtual_timer_t *vtp, void *p) {
     (void)p;
     for (uint8_t i = 0; i < 3; i++) gpio_write_pin_low(colour_pins[i]);
-    if (!schedule_len) return;
-    if (slot >= schedule_len) slot = 0;
-    uint8_t c = schedule[slot];
-    slot++;
-    gpio_write_pin_high(colour_pins[c]);
+    sysinterval_t d = 0;
+    for (uint8_t n = 0; n < 4; n++) {
+        phase = (phase + 1) % 4;
+        d     = on_ticks[phase];
+        if (d >= MIN_TICKS) break;
+    }
+    if (d < MIN_TICKS) d = FRAME_TICKS; /* everything off */
+    if (phase < 3 && on_ticks[phase] >= MIN_TICKS) gpio_write_pin_high(colour_pins[phase]);
+    chVTSetI(vtp, d, phase_tick, NULL);
+}
+
+static void recompute(void) {
+    sysinterval_t t[4], used = 0;
+    for (uint8_t c = 0; c < 3; c++) {
+        t[c] = 0;
+        if ((shown_colour >> c) & 1 && shown_colour != 0xFF) {
+            t[c] = (sysinterval_t)((uint32_t)MAX_TICKS * balance[c] * level / (31u * 255u));
+        }
+        used += t[c];
+    }
+    t[3] = FRAME_TICKS - used;
+    chSysLock();
+    for (uint8_t i = 0; i < 4; i++) on_ticks[i] = t[i];
+    chSysUnlock();
 }
 
 void side_init(void) {
@@ -64,13 +63,21 @@ void side_init(void) {
     for (uint8_t i = 0; i < 3; i++) gpio_set_pin_output(colour_pins[i]);
     for (uint8_t i = 0; i < 6; i++) gpio_set_pin_output(position_pins[i]);
     side_show(0, 0);
-    chVTObjectInit(&slot_timer);
-    chVTSetContinuous(&slot_timer, TIME_US2I(SLOT_US), slot_tick, NULL);
+    chVTObjectInit(&frame_timer);
+    chVTSet(&frame_timer, FRAME_TICKS, phase_tick, NULL);
 }
 
-void side_set_balance(uint8_t level) {
-    for (uint8_t c = 0; c < 3; c++) weight[c] = balances[level % 4][c];
-    if (shown_colour != 0xFF) build_schedule(shown_colour);
+void side_set_tuning(uint8_t red, uint8_t green, uint8_t blue) {
+    balance[0] = red & 31;
+    balance[1] = green & 31;
+    balance[2] = blue & 31;
+    recompute();
+}
+
+void side_set_level(uint8_t new_level) {
+    if (new_level == level) return;
+    level = new_level;
+    recompute();
 }
 
 void side_show(uint8_t positions, uint8_t colour) {
@@ -78,7 +85,7 @@ void side_show(uint8_t positions, uint8_t colour) {
     if (positions == shown_positions && colour == shown_colour) return;
     shown_positions = positions;
     shown_colour    = colour;
-    build_schedule(colour); /* the colour lines are driven by slot_tick() */
+    recompute(); /* the colour lines are driven by phase_tick() */
     for (uint8_t i = 0; i < 6; i++) gpio_write_pin(position_pins[i], !((positions >> i) & 1));
 }
 

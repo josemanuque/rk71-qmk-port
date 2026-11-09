@@ -51,18 +51,55 @@
               ]
             },
             {
-              "label": "White balance",
-              "type": "dropdown",
+              "label": "Brightness",
+              "type": "range",
               "options": [
-                "Neutral",
-                "Warm",
-                "Warmer",
-                "Warmest"
+                0,
+                31
               ],
               "content": [
-                "id_side_balance",
+                "id_side_bright",
                 0,
-                4
+                8
+              ]
+            },
+            {
+              "label": "Red",
+              "type": "range",
+              "options": [
+                0,
+                31
+              ],
+              "content": [
+                "id_side_red",
+                0,
+                5
+              ]
+            },
+            {
+              "label": "Green",
+              "type": "range",
+              "options": [
+                0,
+                31
+              ],
+              "content": [
+                "id_side_green",
+                0,
+                6
+              ]
+            },
+            {
+              "label": "Blue",
+              "type": "range",
+              "options": [
+                0,
+                31
+              ],
+              "content": [
+                "id_side_blue",
+                0,
+                7
               ]
             },
             {

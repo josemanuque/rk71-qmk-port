@@ -53,11 +53,25 @@ typedef union {
         uint8_t side_mode : 2;   /* SIDE_FOLLOW / SIDE_FIXED / SIDE_OFF */
         uint8_t side_colour : 3; /* index into side_colours[] */
         bool    side_no_status : 1;
-        uint8_t side_balance : 2; /* stored as (level + 3) % 4 so all-zero = level 1 "warm" */
+        /* Stored XOR the defaults below, so an all-zero config means "defaults". 0..31 each. */
+        uint8_t side_red : 5;
+        uint8_t side_green : 5;
+        uint8_t side_blue : 5;
+        uint8_t side_bright : 5;
     };
 } kb_config_t;
 
 static kb_config_t kb_config;
+
+/* Side-light defaults: warm balance against the bluish diffuser, full brightness. */
+#define DEF_RED 31
+#define DEF_GREEN 20
+#define DEF_BLUE 8
+#define DEF_BRIGHT 31
+#define SIDE_RED_V (kb_config.side_red ^ DEF_RED)
+#define SIDE_GREEN_V (kb_config.side_green ^ DEF_GREEN)
+#define SIDE_BLUE_V (kb_config.side_blue ^ DEF_BLUE)
+#define SIDE_BRIGHT_V (kb_config.side_bright ^ DEF_BRIGHT)
 
 /* VIA dropdown order: White, Red, Yellow, Green, Cyan, Blue, Magenta */
 static const uint8_t side_colours[] = {SIDE_WHITE, SIDE_RED, SIDE_YELLOW, SIDE_GREEN, SIDE_CYAN, SIDE_BLUE, SIDE_MAGENTA};
@@ -343,6 +357,9 @@ static void side_update(uint32_t now) {
             col = kb_config.side_mode == SIDE_FIXED ? side_colours[kb_config.side_colour % 7] : follow_colour();
         }
     }
+    /* Brightness: the side-light setting times the keyboard's own brightness. */
+    uint32_t level = (uint32_t)SIDE_BRIGHT_V * rgb_matrix_get_val() * 255 / (31u * RGB_MATRIX_MAXIMUM_BRIGHTNESS);
+    side_set_level(level > 255 ? 255 : level);
     side_show(pos, col);
 }
 
@@ -362,7 +379,7 @@ void keyboard_post_init_kb(void) {
     kb_config.raw = eeconfig_read_kb();
     if (kb_config.host > 4) kb_config.host = 0;
     if (kb_config.side_mode > SIDE_OFF) kb_config.side_mode = SIDE_FOLLOW;
-    side_set_balance((kb_config.side_balance + 1) % 4);
+    side_set_tuning(SIDE_RED_V, SIDE_GREEN_V, SIDE_BLUE_V);
     boot_time = timer_read32();
     keyboard_post_init_user();
 }
@@ -472,7 +489,7 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max) {
 
 /* ---- VIA: "Side lights" settings page --------------------------------------------------------- */
 #ifdef VIA_ENABLE
-enum { ID_SIDE_MODE = 1, ID_SIDE_COLOUR, ID_SIDE_STATUS, ID_SIDE_BALANCE };
+enum { ID_SIDE_MODE = 1, ID_SIDE_COLOUR, ID_SIDE_STATUS, ID_SIDE_RED = 5, ID_SIDE_GREEN, ID_SIDE_BLUE, ID_SIDE_BRIGHT };
 
 void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
     /* data = [ command_id, channel_id, value_id, value_data ] */
@@ -491,19 +508,23 @@ void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
                 case ID_SIDE_MODE: kb_config.side_mode = value[0] > SIDE_OFF ? SIDE_FOLLOW : value[0]; break;
                 case ID_SIDE_COLOUR: kb_config.side_colour = value[0] % 7; break;
                 case ID_SIDE_STATUS: kb_config.side_no_status = !value[0]; break;
-                case ID_SIDE_BALANCE:
-                    kb_config.side_balance = (value[0] + 3) % 4;
-                    side_set_balance(value[0] % 4);
-                    break;
+                case ID_SIDE_RED: kb_config.side_red = (value[0] & 31) ^ DEF_RED; break;
+                case ID_SIDE_GREEN: kb_config.side_green = (value[0] & 31) ^ DEF_GREEN; break;
+                case ID_SIDE_BLUE: kb_config.side_blue = (value[0] & 31) ^ DEF_BLUE; break;
+                case ID_SIDE_BRIGHT: kb_config.side_bright = (value[0] & 31) ^ DEF_BRIGHT; break;
                 default: *command_id = id_unhandled; break;
             }
+            side_set_tuning(SIDE_RED_V, SIDE_GREEN_V, SIDE_BLUE_V);
             break;
         case id_custom_get_value:
             switch (value_id) {
                 case ID_SIDE_MODE: value[0] = kb_config.side_mode; break;
                 case ID_SIDE_COLOUR: value[0] = kb_config.side_colour; break;
                 case ID_SIDE_STATUS: value[0] = !kb_config.side_no_status; break;
-                case ID_SIDE_BALANCE: value[0] = (kb_config.side_balance + 1) % 4; break;
+                case ID_SIDE_RED: value[0] = SIDE_RED_V; break;
+                case ID_SIDE_GREEN: value[0] = SIDE_GREEN_V; break;
+                case ID_SIDE_BLUE: value[0] = SIDE_BLUE_V; break;
+                case ID_SIDE_BRIGHT: value[0] = SIDE_BRIGHT_V; break;
                 default: *command_id = id_unhandled; break;
             }
             break;
