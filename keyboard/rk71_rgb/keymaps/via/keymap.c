@@ -130,7 +130,7 @@ static void light_key(uint8_t row, uint8_t col, uint8_t r, uint8_t g, uint8_t b,
 
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     if (host_keyboard_led_state().caps_lock) {
-        light_key(2, 0, RGB_WHITE, led_min, led_max); /* Caps key */
+        light_key(2, 0, RGB_RED, led_min, led_max); /* Caps key (red: visible on white lighting too) */
     }
     if (layer_state_is(FROW)) {
         light_key(4, 11, RGB_ORANGE, led_min, led_max); /* Fn key */

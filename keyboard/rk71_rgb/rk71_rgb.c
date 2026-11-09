@@ -124,8 +124,10 @@ static uint32_t boot_time;
 static bool     session_bt;        /* Bluetooth chosen automatically (no computer on USB at boot) */
 static bool     usb_fallback_done;
 static int8_t   applied_mode = -1; /* -1 = nothing sent to the module yet */
-static uint32_t wired_flash_until; /* P key flashes green after switching to wired */
-static uint32_t forget_flash_until;
+static uint32_t mode_flash_until;   /* P flashes after Fn+P: green = now wired, blue = now Bluetooth */
+static uint32_t forget_flash_until; /* Backspace flashes red after forgetting all devices */
+static bool     show_link;          /* show connect/pair progress: only after a key press, never for
+                                       automatic reconnects (power-on, wake-up) */
 
 static bool want_bt(void) {
     return kb_config.bt_mode || session_bt;
@@ -147,7 +149,6 @@ static void apply_mode(void) {
         connection_set_host_noeeprom(CONNECTION_HOST_USB);
         bt_command(BT_CMD_USB, BT_USB_MODE);
         set_link(LINK_IDLE);
-        wired_flash_until = timer_read32() + 2000;
     }
 }
 
@@ -180,16 +181,20 @@ static bool     hold_done;
 static void key_tap(uint16_t kc) {
     switch (kc) {
         case BT_HST1 ... BT_HST5:
+            show_link = true;
             select_host(kc - BT_HST1, false);
             break;
         case BT_MODE:
             save_mode(!want_bt());
             apply_mode();
+            show_link        = applied_mode == 1;
+            mode_flash_until = timer_read32() + 2000;
             break;
     }
 }
 
 static void key_hold(uint16_t kc) {
+    if (kc != BT_CLR) show_link = true;
     switch (kc) {
         case BT_HST1 ... BT_HST5:
             select_host(kc - BT_HST1, true);
@@ -247,6 +252,10 @@ void housekeeping_task_kb(void) {
     if ((link_state == LINK_CONNECTING || link_state == LINK_PAIRING) && TIMER_DIFF_32(now, link_since) > BLINK_TIMEOUT_MS) {
         link_state = LINK_IDLE;
     }
+    /* Progress lights end 1 s after connecting, or when the attempt fails or times out. */
+    if (show_link && ((link_state == LINK_CONNECTED && TIMER_DIFF_32(now, link_since) > 1000) || TIMER_DIFF_32(now, link_since) > BLINK_TIMEOUT_MS || applied_mode != 1)) {
+        show_link = false;
+    }
 
     if (held_key && !hold_done && TIMER_DIFF_32(now, held_since) >= HOLD_MS) {
         hold_done = true;
@@ -291,16 +300,18 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max) {
     uint8_t  host_col = 1 + kb_config.host; /* Q W E R T = row 1, columns 1..5 */
     bool     bt       = applied_mode == 1;
 
-    if (bt) {
+    /* Connect / pair progress on the slot key (Q..T), only after Fn+Q..T or Fn+P. */
+    if (bt && show_link) {
         switch (link_state) {
             case LINK_PAIRING: /* fast blink */
                 if ((now / 200) % 2) light(1, host_col, RGB_BLUE, led_min, led_max);
                 break;
+            case LINK_IDLE: /* e.g. the old device just disconnected: still connecting */
             case LINK_CONNECTING: /* slow blink */
                 if ((now / 500) % 2) light(1, host_col, RGB_BLUE, led_min, led_max);
                 break;
-            case LINK_CONNECTED: /* solid for 3 s after connecting */
-                if (TIMER_DIFF_32(now, link_since) < 3000) light(1, host_col, RGB_BLUE, led_min, led_max);
+            case LINK_CONNECTED: /* solid for 1 s: connected */
+                light(1, host_col, RGB_BLUE, led_min, led_max);
                 break;
             default:
                 break;
@@ -316,7 +327,13 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max) {
             light(1, 10, RGB_GREEN, led_min, led_max);
         }
     }
-    if (TIMER_DIFF_32(wired_flash_until, now) < 2000 && (now / 250) % 2) light(1, 10, RGB_GREEN, led_min, led_max);
+    if (TIMER_DIFF_32(mode_flash_until, now) < 2000 && (now / 250) % 2) {
+        if (bt) {
+            light(1, 10, RGB_BLUE, led_min, led_max);
+        } else {
+            light(1, 10, RGB_GREEN, led_min, led_max);
+        }
+    }
     if (TIMER_DIFF_32(forget_flash_until, now) < 2000) light(0, 13, RGB_RED, led_min, led_max);
 
     /* Low battery: Space blinks red. */

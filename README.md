@@ -18,7 +18,8 @@ Royal Kludge RK71 RGB: PCB `603-836/RGB-BT-HFD REV:01`, MCU SONiX SN32F248BF. Th
 | `v0.4.1b` | Fix: keys skipped when typing fast on Bluetooth (reports are now queued, not dropped) |
 | `v0.4.2b` | Fix attempt 2 for skipped keys on Bluetooth: whole packet preloaded into the SPI FIFO, top-priority SPI interrupt |
 | `v0.4.3b` | Stronger switch debounce (10 ms, per key) against double letters |
-| `main` | Latest (= v0.4.3b) |
+| `v0.4.4b` | Quieter status lights (only after Fn+Q–T/Fn+P, none on automatic reconnect), Caps Lock shown red |
+| `main` | Latest (= v0.4.4b) |
 
 Each version branch has its ready-to-flash image in `releases/`.
 
