@@ -385,6 +385,9 @@ void keyboard_post_init_kb(void) {
 }
 
 static bool rgb_off_for_idle;
+static bool     save_pending;      /* VIA settings changed, write to flash once they settle */
+static uint32_t save_requested_at;
+#define SAVE_DELAY_MS 2000
 
 bool rk71_rgb_lighting_on(void) {
     return rgb_matrix_is_enabled() && !rgb_matrix_get_suspend_state();
@@ -424,6 +427,11 @@ void housekeeping_task_kb(void) {
     } else if (!idle && rgb_off_for_idle) {
         rgb_matrix_enable_noeeprom();
         rgb_off_for_idle = false;
+    }
+
+    if (save_pending && TIMER_DIFF_32(now, save_requested_at) > SAVE_DELAY_MS) {
+        save_pending = false;
+        save_config();
     }
 
     side_update(now);
@@ -529,7 +537,10 @@ void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
             }
             break;
         case id_custom_save:
-            save_config();
+            /* VIA asks to save after every slider step. A flash write pauses the chip, which
+             * makes the key lighting blink, so only write once the sliders have been still. */
+            save_pending = true;
+            save_requested_at = timer_read32();
             break;
         default:
             *command_id = id_unhandled;
