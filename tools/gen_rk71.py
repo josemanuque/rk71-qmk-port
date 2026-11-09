@@ -88,12 +88,23 @@ if len(sys.argv) > 2:
         rows.append(row)
     via = {"name": "RK71 RGB (QMK)", "vendorId": "0x0C45", "productId": "0x8071",
            "matrix": {"rows": 5, "cols": 16}, "keycodes": ["qmk_lighting"],
-           "menus": ["qmk_rgb_matrix"],
+           "menus": ["qmk_rgb_matrix", {
+               # keyboard/rk71_rgb/rk71_rgb.c via_custom_value_command_kb(): channel 0, values 1..3
+               "label": "Side lights",
+               "content": [{"label": "Side lights", "content": [
+                   {"label": "Colour", "type": "dropdown", "options": ["Follow keyboard", "Fixed colour", "Off"],
+                    "content": ["id_side_mode", 0, 1]},
+                   {"showIf": "{id_side_mode} == 1", "label": "Fixed colour", "type": "dropdown",
+                    "options": ["White", "Red", "Yellow", "Green", "Cyan", "Blue", "Magenta"],
+                    "content": ["id_side_colour", 0, 2]},
+                   {"label": "Show status (pairing, mode, battery)", "type": "toggle",
+                    "content": ["id_side_status", 0, 3]}]}]}],
            "customKeycodes": [  # QK_KB_0… in keyboard/rk71_rgb/rk71_rgb.h, same order
                {"name": f"BT {n}", "title": f"Bluetooth device {n} (hold 3 s: pair)", "shortName": f"BT{n}"}
                for n in range(1, 6)] + [
                {"name": "BT/USB", "title": "Switch wired / Bluetooth (hold 3 s: pair current slot)", "shortName": "BT/USB"},
-               {"name": "BT Clear", "title": "Hold 3 s: forget all Bluetooth devices", "shortName": "BTclr"}],
+               {"name": "BT Clear", "title": "Hold 3 s: forget all Bluetooth devices", "shortName": "BTclr"},
+               {"name": "Battery", "title": "Show the battery level on the side lights", "shortName": "Batt"}],
            "layouts": {"keymap": rows}}
     json.dump(via, open(sys.argv[2], "w"), indent=2)
     print("wrote", sys.argv[2])

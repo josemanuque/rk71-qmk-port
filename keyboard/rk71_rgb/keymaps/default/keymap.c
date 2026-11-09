@@ -66,6 +66,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * Fn + Q/W/E/R/T    → Bluetooth device 1–5;  hold 3 s → pair a new device in that slot
  * Fn + P            → switch wired / Bluetooth;  hold 3 s → pair the current slot
  * Fn + Backspace    → hold 3 s → forget all paired devices
+ * Fn + Space        → battery level on the side lights (green high, yellow medium, red low)
      * (Win/Alt here are the physical keys, so these combos work the same in both modes.)
      */
     [FN] = LAYOUT(
@@ -73,7 +74,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______, BT_HST1, BT_HST2, BT_HST3, BT_HST4, BT_HST5, _______, _______, _______, _______, BT_MODE, _______, _______, RM_NEXT,          KC_MPLY, KC_MNXT,
         _______, _______, _______, _______, _______, _______, RM_HUEU, _______, _______, _______, _______, _______,          RM_TOGG,          QK_BOOT, KC_VOLU,
         _______,          _______, _______, _______, _______, _______, _______, KC_MUTE, _______, _______, _______,          _______,          RM_VALU, KC_VOLD,
-        TG(FROW), PDF(MAC_BASE), PDF(WIN_BASE),               _______,                   _______, _______, TG(FROW),         RM_SPDD,          RM_VALD, RM_SPDU
+        TG(FROW), PDF(MAC_BASE), PDF(WIN_BASE),               BT_BATT,                   _______, _______, TG(FROW),         RM_SPDD,          RM_VALD, RM_SPDU
     ),
     /*
      * Media on the F-row, active only while the F-row lock is on and Fn is held.

@@ -21,7 +21,8 @@ Royal Kludge RK71 RGB: PCB `603-836/RGB-BT-HFD REV:01`, MCU SONiX SN32F248BF. Th
 | `v0.4.4b` | Quieter status lights (only after Fn+Q–T/Fn+P, none on automatic reconnect), Caps Lock shown red |
 | `v0.4.5b` | Caps Lock: stock cool white, or a dark key when the lighting is white |
 | `v0.4.6b` | No Caps Lock blink when switching to Bluetooth (fresh lock state, 200 ms stability filter) |
-| `main` | Latest (= v0.4.6b) |
+| `v0.5b` | Side lights (follow keyboard / fixed / off, set in VIA) with status: pairing, mode, battery bar on Fn+Space; automatic wired/Bluetooth from cable detection |
+| `main` | Latest (= v0.5b) |
 
 Each version branch has its ready-to-flash image in `releases/`.
 
