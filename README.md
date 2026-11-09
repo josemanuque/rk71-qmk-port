@@ -6,6 +6,8 @@ Royal Kludge RK71 RGB: PCB `603-836/RGB-BT-HFD REV:01`, MCU SONiX SN32F248BF. Th
 * **a QMK port** (`keyboard/rk71_rgb`). Its pins come from disassembling the stock firmware, not from guesswork. It
   works with VIA, and it supports per-key RGB.
 
+**Using the QMK firmware (keys, Bluetooth, lighting, side lights, VIA): [docs/QMK_FIRMWARE.md](docs/QMK_FIRMWARE.md).**
+
 ## Branches and versions
 
 | Branch | What it is |
@@ -38,7 +40,7 @@ stock/         vendor firmware image + official updater / PC software, recovery 
 keyboard/      QMK keyboard source: rk71_rgb (copied into qmk_firmware/ at build time)
 via/           VIA definition: load it in usevia.app > Settings > Design tab
 releases/      built firmware for each version
-docs/          reverse-engineering notes (Bluetooth protocol)
+docs/          QMK_FIRMWARE.md (user guide), BLUETOOTH.md (module protocol)
 tools/         build.sh, flash_rk71.sh, gen_rk71.py (keyboard.json + VIA json), stock_enter_isp.py
 archive/       an earlier failed attempt, kept for history only
 ```
