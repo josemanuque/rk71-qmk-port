@@ -10,7 +10,7 @@ static const pin_t colour_pins[3]   = {D6, D4, D5};                /* red, green
 static const pin_t position_pins[6] = {B9, B10, B11, B12, C0, C1}; /* far … near */
 
 static uint8_t          shown_positions = 0xFF, shown_colour = 0xFF;
-static volatile uint8_t schedule[8]; /* colour index (0 R, 1 G, 2 B) per time slot */
+static volatile uint8_t schedule[10]; /* colour index (0 R, 1 G, 2 B) per time slot */
 static volatile uint8_t schedule_len;
 static uint8_t          slot;
 static virtual_timer_t  slot_timer;
@@ -18,19 +18,20 @@ static virtual_timer_t  slot_timer;
 /* Red, green and blue are shown one after another, never together: the LEDs share a supply per
  * position, and with red lit (lowest forward voltage) green and blue cannot light, so "white"
  * came out red. Short slots (200 us) keep each colour returning well over 1000 times a second.
- * Colour balance: the side LEDs sit behind a bluish diffuser, so blue gets fewer slots
- * (red 3 : green 3 : blue 2 out of 8 when all three are on). */
+ * Colour balance: the side LEDs sit behind a bluish diffuser, so red and green get more slots
+ * than blue (set with side_set_balance(), from VIA "White balance"). */
 #define SLOT_US 200
-static const uint8_t weight[3] = {3, 3, 2};
+static const uint8_t balances[4][3] = {{3, 3, 2}, {4, 3, 1}, {5, 3, 1}, {5, 2, 1}};
+static uint8_t       weight[3]      = {4, 3, 1};
 
 static void build_schedule(uint8_t colour) {
     /* Interleave the wanted colours by weight: e.g. white = R G B R G R G B. */
     uint8_t left[3], n = 0;
     for (uint8_t c = 0; c < 3; c++) left[c] = ((colour >> c) & 1) ? weight[c] : 0;
-    uint8_t tmp[8];
-    while (n < 8) {
+    uint8_t tmp[10];
+    while (n < 10) {
         bool any = false;
-        for (uint8_t c = 0; c < 3 && n < 8; c++) {
+        for (uint8_t c = 0; c < 3 && n < 10; c++) {
             if (left[c]) {
                 tmp[n++] = c;
                 left[c]--;
@@ -65,6 +66,11 @@ void side_init(void) {
     side_show(0, 0);
     chVTObjectInit(&slot_timer);
     chVTSetContinuous(&slot_timer, TIME_US2I(SLOT_US), slot_tick, NULL);
+}
+
+void side_set_balance(uint8_t level) {
+    for (uint8_t c = 0; c < 3; c++) weight[c] = balances[level % 4][c];
+    if (shown_colour != 0xFF) build_schedule(shown_colour);
 }
 
 void side_show(uint8_t positions, uint8_t colour) {

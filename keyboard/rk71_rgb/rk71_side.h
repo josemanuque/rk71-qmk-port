@@ -28,6 +28,10 @@
 void side_init(void);
 void side_show(uint8_t positions, uint8_t colour); /* colour 0 or positions 0 = off */
 
+/* White balance against the bluish diffuser: 0 neutral (3:3:2), 1 warm (4:3:1), 2 warmer (5:3:1),
+ * 3 warmest (5:2:1) red:green:blue time slots. */
+void side_set_balance(uint8_t level);
+
 /* USB cable present (C15, high when the cable supplies power). Call vbus_task() from the main
  * loop; vbus_present() is debounced. */
 void vbus_task(void);

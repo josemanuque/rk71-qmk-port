@@ -53,6 +53,7 @@ typedef union {
         uint8_t side_mode : 2;   /* SIDE_FOLLOW / SIDE_FIXED / SIDE_OFF */
         uint8_t side_colour : 3; /* index into side_colours[] */
         bool    side_no_status : 1;
+        uint8_t side_balance : 2; /* stored as (level + 3) % 4 so all-zero = level 1 "warm" */
     };
 } kb_config_t;
 
@@ -361,6 +362,7 @@ void keyboard_post_init_kb(void) {
     kb_config.raw = eeconfig_read_kb();
     if (kb_config.host > 4) kb_config.host = 0;
     if (kb_config.side_mode > SIDE_OFF) kb_config.side_mode = SIDE_FOLLOW;
+    side_set_balance((kb_config.side_balance + 1) % 4);
     boot_time = timer_read32();
     keyboard_post_init_user();
 }
@@ -470,7 +472,7 @@ bool rgb_matrix_indicators_advanced_kb(uint8_t led_min, uint8_t led_max) {
 
 /* ---- VIA: "Side lights" settings page --------------------------------------------------------- */
 #ifdef VIA_ENABLE
-enum { ID_SIDE_MODE = 1, ID_SIDE_COLOUR, ID_SIDE_STATUS };
+enum { ID_SIDE_MODE = 1, ID_SIDE_COLOUR, ID_SIDE_STATUS, ID_SIDE_BALANCE };
 
 void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
     /* data = [ command_id, channel_id, value_id, value_data ] */
@@ -489,6 +491,10 @@ void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
                 case ID_SIDE_MODE: kb_config.side_mode = value[0] > SIDE_OFF ? SIDE_FOLLOW : value[0]; break;
                 case ID_SIDE_COLOUR: kb_config.side_colour = value[0] % 7; break;
                 case ID_SIDE_STATUS: kb_config.side_no_status = !value[0]; break;
+                case ID_SIDE_BALANCE:
+                    kb_config.side_balance = (value[0] + 3) % 4;
+                    side_set_balance(value[0] % 4);
+                    break;
                 default: *command_id = id_unhandled; break;
             }
             break;
@@ -497,6 +503,7 @@ void via_custom_value_command_kb(uint8_t *data, uint8_t length) {
                 case ID_SIDE_MODE: value[0] = kb_config.side_mode; break;
                 case ID_SIDE_COLOUR: value[0] = kb_config.side_colour; break;
                 case ID_SIDE_STATUS: value[0] = !kb_config.side_no_status; break;
+                case ID_SIDE_BALANCE: value[0] = (kb_config.side_balance + 1) % 4; break;
                 default: *command_id = id_unhandled; break;
             }
             break;

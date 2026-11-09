@@ -97,6 +97,9 @@ if len(sys.argv) > 2:
                    {"showIf": "{id_side_mode} == 1", "label": "Fixed colour", "type": "dropdown",
                     "options": ["White", "Red", "Yellow", "Green", "Cyan", "Blue", "Magenta"],
                     "content": ["id_side_colour", 0, 2]},
+                   {"label": "White balance", "type": "dropdown",
+                    "options": ["Neutral", "Warm", "Warmer", "Warmest"],
+                    "content": ["id_side_balance", 0, 4]},
                    {"label": "Show status (pairing, mode, battery)", "type": "toggle",
                     "content": ["id_side_status", 0, 3]}]}]}],
            "customKeycodes": [  # QK_KB_0… in keyboard/rk71_rgb/rk71_rgb.h, same order

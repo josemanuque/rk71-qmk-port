@@ -51,6 +51,21 @@
               ]
             },
             {
+              "label": "White balance",
+              "type": "dropdown",
+              "options": [
+                "Neutral",
+                "Warm",
+                "Warmer",
+                "Warmest"
+              ],
+              "content": [
+                "id_side_balance",
+                0,
+                4
+              ]
+            },
+            {
               "label": "Show status (pairing, mode, battery)",
               "type": "toggle",
               "content": [
