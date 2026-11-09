@@ -130,7 +130,13 @@ static void light_key(uint8_t row, uint8_t col, uint8_t r, uint8_t g, uint8_t b,
 
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
     if (host_keyboard_led_state().caps_lock) {
-        light_key(2, 0, RGB_RED, led_min, led_max); /* Caps key (red: visible on white lighting too) */
+        /* Stock look: cool white (R 170, G 255, B 255, from firmware V1.12 @0xA914). On white-ish
+         * lighting that would not stand out, so there the Caps key goes dark instead. */
+        if (rgb_matrix_get_sat() < 64) {
+            light_key(2, 0, 0, 0, 0, led_min, led_max);
+        } else {
+            light_key(2, 0, 170, 255, 255, led_min, led_max);
+        }
     }
     if (layer_state_is(FROW)) {
         light_key(4, 11, RGB_ORANGE, led_min, led_max); /* Fn key */
