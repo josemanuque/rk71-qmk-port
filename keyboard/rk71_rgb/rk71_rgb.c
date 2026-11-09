@@ -56,7 +56,10 @@ static uint32_t     link_since;
 static bool         link_connected;
 static bool         battery_low;
 static bool         battery_shutdown;
-static uint8_t      host_leds;
+static uint8_t      host_leds;    /* lock LEDs (Num/Caps/Scroll) as the Bluetooth host reports them */
+static uint8_t      pending_leds; /* newest report, applied once it has been stable for LEDS_STABLE_MS */
+static uint32_t     pending_since;
+#define LEDS_STABLE_MS 200 /* right after connecting, a wrong value can arrive for a moment */
 
 static void set_link(link_state_t s) {
     link_state     = s;
@@ -66,7 +69,8 @@ static void set_link(link_state_t s) {
 
 void rk71_bt_received(const uint8_t *p, uint8_t len) {
     if (p[0] == 0xB1) {
-        host_leds = p[1] & 0x07;
+        pending_leds  = p[1] & 0x07;
+        pending_since = timer_read32();
     } else if (p[0] == 0xB6 && p[1] == 0x51) {
         switch (p[2]) {
             case 0x76: set_link(LINK_CONNECTED); break;
@@ -143,6 +147,7 @@ static void apply_mode(void) {
     if (applied_mode == (int8_t)bt) return;
     applied_mode = bt;
     if (bt) {
+        host_leds = pending_leds = 0; /* no stale Caps Lock state from an earlier session */
         connection_set_host_noeeprom(CONNECTION_HOST_BLUETOOTH);
         connect_host();
     } else {
@@ -256,6 +261,8 @@ void housekeeping_task_kb(void) {
     if (show_link && ((link_state == LINK_CONNECTED && TIMER_DIFF_32(now, link_since) > 1000) || TIMER_DIFF_32(now, link_since) > BLINK_TIMEOUT_MS || applied_mode != 1)) {
         show_link = false;
     }
+
+    if (pending_leds != host_leds && TIMER_DIFF_32(now, pending_since) >= LEDS_STABLE_MS) host_leds = pending_leds;
 
     if (held_key && !hold_done && TIMER_DIFF_32(now, held_since) >= HOLD_MS) {
         hold_done = true;
