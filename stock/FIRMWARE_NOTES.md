@@ -48,7 +48,7 @@ What happens when you click Start:
    writes `SN32F240B_32.hex`, and returns to user mode.
 
 SonixFlasher implements the same steps: `-r hfd` sends that magic, and its normal flashing is step 4.
-`tools/stock_enter_isp.py` does steps 1–3 with nothing but Python's standard library.
+`tools/stock_enter_isp.py` does steps 1–3: with Python's standard library on Windows, or `hidapi` on Linux/macOS.
 
 Why the earlier session's attempts "never triggered reliably": its scripts opened the keyboard with read/write
 access (refused by Windows), or sent invented packets (`AA 55 …`, `0x33/0x81`).

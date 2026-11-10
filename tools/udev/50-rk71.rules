@@ -1,0 +1,12 @@
+# Royal Kludge RK71: let normal users (logged in at the machine) access the keyboard's HID interfaces,
+# for VIA (QMK firmware), flashing (ROM bootloader) and tools/stock_enter_isp.py (stock firmware).
+#   sudo cp tools/udev/50-rk71.rules /etc/udev/rules.d/ && sudo udevadm control --reload && sudo udevadm trigger
+# then unplug and replug the keyboard.
+
+# QMK firmware (VIA)
+KERNEL=="hidraw*", ATTRS{idVendor}=="0c45", ATTRS{idProduct}=="8071", MODE="0660", TAG+="uaccess"
+# SN32 ROM bootloader (flashing)
+KERNEL=="hidraw*", ATTRS{idVendor}=="0c45", ATTRS{idProduct}=="7040", MODE="0660", TAG+="uaccess"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0c45", ATTRS{idProduct}=="7040", MODE="0660", TAG+="uaccess"
+# Stock firmware (Apple keyboard ID; only matched over USB)
+KERNEL=="hidraw*", SUBSYSTEMS=="usb", ATTRS{idVendor}=="05ac", ATTRS{idProduct}=="024f", MODE="0660", TAG+="uaccess"

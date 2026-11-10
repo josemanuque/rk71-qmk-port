@@ -1,0 +1,67 @@
+name: Build firmware
+
+# Every push and pull request: build the firmware and keep it as a downloadable artifact.
+# Pushing a version tag (v0.6.0b, v1.0.0, …): also publish a GitHub Release with the images attached.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write # needed to create releases on tags
+
+env:
+  QMK_COMMIT: c9f3803f # SonixQMK commit this port is built and tested against (also in tools/build.sh)
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Arm GNU toolchain 12.2 (same major version as the release builds)
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: "12.2.Rel1"
+
+      - name: SonixQMK checkout (cached)
+        id: qmk-cache
+        uses: actions/cache@v4
+        with:
+          path: qmk_firmware
+          key: sonixqmk-${{ env.QMK_COMMIT }}
+
+      - name: Clone SonixQMK
+        if: steps.qmk-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/SonixQMK/qmk_firmware.git qmk_firmware
+          git -C qmk_firmware checkout "$QMK_COMMIT"
+          git -C qmk_firmware submodule update --init --recursive
+
+      - name: qmk CLI
+        run: python3 -m pip install --quiet qmk -r qmk_firmware/requirements.txt
+
+      - name: Build
+        run: |
+          ver="${GITHUB_REF_NAME//\//-}"
+          bash tools/build.sh via "out/rk71_rgb_${ver}.bin"
+          bash tools/build.sh default "out/rk71_rgb_${ver}_default-keymap.bin"
+          cp via/rk71_rgb_via.json out/
+          (cd out && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rk71_rgb-${{ github.sha }}
+          path: out/
+
+      - name: Publish release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pre=""
+          case "$GITHUB_REF_NAME" in *b | *-beta* | *-rc*) pre="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" out/* $pre --title "$GITHUB_REF_NAME" --generate-notes \
+            || gh release upload "$GITHUB_REF_NAME" out/* --clobber

@@ -8,7 +8,7 @@
 /*
  * Side lights: 6 positions per side (1 = far end, 6 = near end), the same position lit on both
  * sides at once. Colour lines are shared, so all lit positions show the same colour.
- * Mapped with the diag keymap on the user's board (2026-11-09):
+ * Mapped with the diag keymap on a real board (2026-11-09):
  *   colour (high = on):    D6 red, D4 green, D5 blue
  *   position (low = on):   B9 B10 B11 B12 C0 C1  = positions 1..6
  * The stock firmware turns them off before sleeping (colours low, positions high, @0x0220).

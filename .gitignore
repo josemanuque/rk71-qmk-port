@@ -6,9 +6,13 @@ sonixflasher/
 sonixflasher.zip
 tools/make.exe
 
-# Local build output (released binaries go in releases/)
+# Firmware images are published as GitHub Release downloads, not committed
 build/
+releases/
 *.elf
 *.map
+
+# Royal Kludge's vendor programs: mirrored on the "stock-v1.12" GitHub release (see stock/README.md)
+stock/*.exe
 
 __pycache__/

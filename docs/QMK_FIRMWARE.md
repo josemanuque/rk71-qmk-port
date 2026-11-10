@@ -39,12 +39,17 @@ back to stock at any time, see [stock/README.md](../stock/README.md).
 
 ## Installing
 
-1. Get [SonixFlasher](https://github.com/SonixQMK/SonixFlasher/releases) into `sonixflasher/sonixflasher.exe`.
+Works from Windows (Git Bash), macOS and Linux.
+
+1. Download `rk71_rgb_<version>.bin` from the [Releases](../../../releases) page, and
+   [SonixFlasher](https://github.com/SonixQMK/SonixFlasherC/releases) for your OS into `sonixflasher/` (or your PATH).
+   On Linux, also install the udev rule: `sudo cp tools/udev/50-rk71.rules /etc/udev/rules.d/`, then
+   `sudo udevadm control --reload && sudo udevadm trigger`.
 2. Put the keyboard into the bootloader (USB `0C45:7040`). With the cable plugged in:
    * **from this firmware:** **Fn + Pause**
-   * **from stock firmware:** `python tools/stock_enter_isp.py`
+   * **from stock firmware:** `python3 tools/stock_enter_isp.py` (Linux/macOS: `pip install hidapi` first)
    * **if nothing works:** the BOOT-pad short in [stock/README.md](../stock/README.md#if-it-is-bricked-no-keys-no-lights-fnpause-does-nothing)
-3. `bash tools/flash_rk71.sh releases/rk71_rgb_v0.5.5b.bin`
+3. `bash tools/flash_rk71.sh rk71_rgb_v0.5.5b.bin`
 
    Tip: start the script first. It waits for the bootloader, so you can then press Fn+Pause and it flashes
    straight away.
@@ -209,7 +214,7 @@ to defaults when you flash a new image or switch to stock and back.
 |---|---|
 | Keys don't work, lights off after flashing | Recovery via the BOOT pad: [stock/README.md](../stock/README.md#if-it-is-bricked-no-keys-no-lights-fnpause-does-nothing) |
 | Fn+Pause and the keyboard seems dead | It's in the bootloader, waiting for a flash. Run the flash script, or unplug/replug to restart normally (with the slide switch off). |
-| VIA doesn't find the keyboard | Use the cable, use Chrome/Edge, and load `via/rk71_rgb_via.json` in the Design tab |
+| VIA doesn't find the keyboard | Use the cable, use Chrome/Edge, and load `via/rk71_rgb_via.json` in the Design tab. On Linux, install `tools/udev/50-rk71.rules`. |
 | Bluetooth computer won't connect | Remove the keyboard from the computer's Bluetooth list, then hold Fn + slot key 3 s to pair again |
 | Fn+Space blinks red | The Bluetooth module isn't answering: slide switch off, or the battery is completely flat |
 | Want factory firmware back | [stock/README.md](../stock/README.md#going-back-to-stock) |
