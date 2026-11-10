@@ -67,11 +67,17 @@ jobs:
           bash tools/build.sh default "out/rk71_rgb_${ver}_default-keymap.bin"
           cp via/rk71_rgb_via.json out/
           (cd out && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          mkdir -p debug && cp qmk_firmware/.build/*.elf qmk_firmware/.build/*.map debug/ 2>/dev/null || true
 
       - uses: actions/upload-artifact@v4
         with:
           name: rk71_rgb-${{ github.sha }}
           path: out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debug-elf-${{ github.sha }}
+          path: debug/
 
       - name: Publish release (tags only)
         if: startsWith(github.ref, 'refs/tags/v')
