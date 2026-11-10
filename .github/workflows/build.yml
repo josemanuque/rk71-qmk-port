@@ -14,6 +14,7 @@ permissions:
 
 env:
   QMK_COMMIT: c9f3803f # SonixQMK commit this port is built and tested against (also in tools/build.sh)
+  ARM_TOOLCHAIN: 12.2.mpacbti-rel1
 
 jobs:
   build:
@@ -21,10 +22,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Arm GNU toolchain 12.2 (same major version as the release builds)
-        uses: carlosperate/arm-none-eabi-gcc-action@v1
+      # The exact toolchain the firmware was developed and tested with, so CI images match local builds
+      # byte for byte (apart from the build date). 12.2.Rel1 also works, but its C library differs.
+      - name: Arm GNU toolchain cache
+        id: arm-cache
+        uses: actions/cache@v4
         with:
-          release: "12.2.Rel1"
+          path: ~/arm-gnu-toolchain
+          key: arm-gnu-toolchain-${{ env.ARM_TOOLCHAIN }}
+
+      - name: Download Arm GNU toolchain
+        if: steps.arm-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/arm-gnu-toolchain
+          curl -sSL "https://developer.arm.com/-/media/Files/downloads/gnu/${ARM_TOOLCHAIN}/binrel/arm-gnu-toolchain-${ARM_TOOLCHAIN}-x86_64-arm-none-eabi.tar.xz" \
+            | tar -xJ -C ~/arm-gnu-toolchain --strip-components=1
+
+      - name: Add toolchain to PATH
+        run: |
+          echo "$HOME/arm-gnu-toolchain/bin" >> "$GITHUB_PATH"
+          ~/arm-gnu-toolchain/bin/arm-none-eabi-gcc --version | head -1
 
       - name: SonixQMK checkout (cached)
         id: qmk-cache

@@ -72,7 +72,8 @@ git -C qmk_firmware checkout c9f3803f && git -C qmk_firmware submodule update --
 bash tools/build.sh                # output: build/rk71_rgb_via.bin
 ```
 
-Needed on PATH: `arm-none-eabi-gcc` (Arm GNU Toolchain 12.2; releases are built with it), `make`, and the qmk CLI
+Needed on PATH: `arm-none-eabi-gcc` (Arm GNU Toolchain **12.2.mpacbti-rel1**, which releases are built with; other
+versions work too but give a slightly different image), `make`, and the qmk CLI
 (`pip install qmk` or `uv tool install qmk`).
 
 * **Linux / macOS:** install the toolchain from [Arm](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads)
